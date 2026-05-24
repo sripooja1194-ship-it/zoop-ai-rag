@@ -1,19 +1,19 @@
 import streamlit as st
+import time
 from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
+from PIL import Image
 from groq import Groq
 import whisper
-import tempfile
-import os
 from streamlit_mic_recorder import mic_recorder
 
-# ---------------- CONFIG ---------------- #
+# ---------------- PAGE CONFIG ---------------- #
 st.set_page_config(page_title="Zoop AI RAG", layout="wide")
 
 # ---------------- GROQ CLIENT ---------------- #
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+client = Groq(api_key="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")  # 
 
 
 # ---------------- SESSION STATE ---------------- #
@@ -309,10 +309,8 @@ def get_context(question):
 
     return "\n".join([d.page_content for d in docs])
 
-def analyze_image(uploaded_image):
-
-    def analyze_image_with_groq(image_bytes):
-     response = client.chat.completions.create(
+def analyze_image_with_groq(image_bytes):
+    response = client.chat.completions.create(
         model="llama-3.2-11b-vision-preview",
         messages=[
             {
@@ -333,7 +331,7 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 def ask_llm(prompt):
     response = client.chat.completions.create(
-        model="llama3-70b-8192",
+        model="llama-3.1-8b-instant",
         messages=[
             {"role": "user", "content": prompt}
         ]
@@ -378,7 +376,7 @@ Question:
 
     # run LLM safely
     try:
-        answer = ask_llm(prompt, selected_model)
+        answer = ask_llm(prompt)
     except Exception as e:
         answer = f"Error: {str(e)}"
 
