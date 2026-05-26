@@ -233,17 +233,26 @@ for msg in st.session_state.chat_history:
 # ---------------- INPUT CAPTURE ---------------- #
 text_query = st.chat_input("Ask something from your PDF...")
 
-# Voice Input Handling
-audio = mic_recorder(start_prompt="🎤 Voice Input", stop_prompt="⏹ Stop Recording", just_once=True, use_container_width=True)
+import tempfile
+
+audio = mic_recorder(
+    start_prompt="🎤 Voice Input",
+    stop_prompt="⏹ Stop Recording",
+    just_once=True,
+    use_container_width=True
+)
+
 if audio:
-    with open("temp_audio.wav", "wb") as f:
-        f.write(audio["bytes"])
-    result = whisper_model.transcribe("temp_audio.wav")
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        tmp.write(audio["bytes"])
+        tmp_path = tmp.name
+
+    result = whisper_model.transcribe(tmp_path)
     text_query = result["text"]
 
-# Overwrite query if a Quick Action button was clicked
 if click_query:
     text_query = click_query
+
 
 # ---------------- MAIN CHAT FLOW Execution ---------------- #
 if text_query and text_query != st.session_state.last_query:
