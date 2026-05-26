@@ -231,6 +231,7 @@ for msg in st.session_state.chat_history:
         st.markdown(msg["content"])
 
 # ---------------- INPUT CAPTURE ---------------- #
+
 text_query = st.chat_input("Ask something from your PDF...")
 
 import tempfile
@@ -239,16 +240,26 @@ import os
 audio = mic_recorder()
 
 if audio and "bytes" in audio:
+    # Use delete=False so we can manually manage the file lifecycle safely
     with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
         tmp.write(audio["bytes"])
-        tmp_path = tmp.name
+        tmp_path = tmp.name  # Safely store the path string
+    
+    # The 'with' block implicitly closes the file handle here, 
+    # ensuring Whisper has permission to read the data on the container disk.
 
-    # DEBUG (IMPORTANT)
-    if os.path.exists(tmp_path):
-        result = whisper_model.transcribe(tmp_path)
-        text_query = result["text"]
-    else:
-        st.error("Audio file not created properly")
+    try:
+        if os.path.exists(tmp_path):
+            result = whisper_model.transcribe(tmp_path)
+            text_query = result["text"]
+        else:
+            st.error("Audio file not created properly")
+    except Exception as e:
+        st.error(f"Whisper transcription failed: {e}")
+    finally:
+        # Prevent disk accumulation errors inside the Streamlit runtime
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 # ---------------- MAIN CHAT FLOW Execution ---------------- #
 if text_query and text_query != st.session_state.last_query:
