@@ -234,25 +234,21 @@ for msg in st.session_state.chat_history:
 text_query = st.chat_input("Ask something from your PDF...")
 
 import tempfile
+import os
 
-audio = mic_recorder(
-    start_prompt="🎤 Voice Input",
-    stop_prompt="⏹ Stop Recording",
-    just_once=True,
-    use_container_width=True
-)
+audio = mic_recorder()
 
-if audio:
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+if audio and "bytes" in audio:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
         tmp.write(audio["bytes"])
         tmp_path = tmp.name
 
-    result = whisper_model.transcribe(tmp_path)
-    text_query = result["text"]
-
-if click_query:
-    text_query = click_query
-
+    # DEBUG (IMPORTANT)
+    if os.path.exists(tmp_path):
+        result = whisper_model.transcribe(tmp_path)
+        text_query = result["text"]
+    else:
+        st.error("Audio file not created properly")
 
 # ---------------- MAIN CHAT FLOW Execution ---------------- #
 if text_query and text_query != st.session_state.last_query:
